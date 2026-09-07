@@ -1,0 +1,3 @@
+markitdown[docx,xlsx,xls,pptx,pdf]
+pyinstaller
+pillow

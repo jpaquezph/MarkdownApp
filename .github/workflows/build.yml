@@ -1,0 +1,54 @@
+name: Build installers
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build .app and .dmg
+        run: bash installer/build_mac.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ConvertidorMarkdown-mac
+          path: dist_installer/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build exe
+        run: >
+          pyinstaller --noconfirm --onefile --windowed
+          --name ConvertidorMarkdown --icon app/icon.ico
+          --collect-all magika --collect-all onnxruntime
+          --hidden-import mammoth --hidden-import openpyxl --hidden-import pptx
+          --hidden-import pdfminer --hidden-import pdfminer.six
+          --hidden-import pdfplumber --hidden-import xlrd
+          app/main.py
+      - name: Install Inno Setup
+        run: choco install innosetup -y
+      - name: Build installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\setup.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ConvertidorMarkdown-windows
+          path: dist_installer/*.exe
